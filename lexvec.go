@@ -95,7 +95,7 @@ type Word struct {
 func (w *Word) Ppmi(c *Word) float64 {
 	cooc, ok := w.cooc[c.i]
 	if !ok {
-		return 0.0
+		return 0
 	}
 	return w.PpmiDirect(c, cooc)
 }
@@ -111,14 +111,14 @@ func (w *Word) PpmiDirect(c *Word, cooc float64) float64 {
 func (w *Word) Pmi(c *Word) float64 {
 	cooc, ok := w.cooc[c.i]
 	if !ok {
-		return 0.0
+		cooc = 0
 	}
 	return w.PmiDirect(c, cooc)
 }
 
 func (w *Word) PmiDirect(c *Word, cooc float64) float64 {
 	if cooc < 1 {
-		cooc = 1
+		cooc = 1 // smoothing
 	}
 	pmi := math.Log(cooc) - math.Log(w.totalCooc) - math.Log(math.Pow(c.totalCooc, contextDistributionSmoothing)) + math.Log(cdsTotal)
 	return pmi
@@ -127,7 +127,7 @@ func (w *Word) PmiDirect(c *Word, cooc float64) float64 {
 func (w *Word) LogCooc(c *Word) float64 {
 	cooc, ok := w.cooc[c.i]
 	if !ok {
-		return 0.0
+		return 0
 	}
 	return w.LogCoocDirect(c, cooc)
 }
