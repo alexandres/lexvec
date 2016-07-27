@@ -2,6 +2,15 @@
 
 This is an implementation of the **LexVec word embedding model** (similar to word2vec and GloVe) that achieves state of the art results in multiple NLP tasks, as described in [this paper](https://arxiv.org/pdf/1606.00819v2) and [this one](https://arxiv.org/pdf/1606.01283v1).
 
+## Pre-trained Vectors
+
+* English Wikipedia 2015 - 3.8B tokens - 303,517 words
+  - [Word Vectors (327MB)](http://nlpserver2.inf.ufrgs.br/alexandres/vectors/lexvec.enwiki.300d.W.pos.vectors.gz) 
+  - [Word + Context Vectors (351MB)](http://nlpserver2.inf.ufrgs.br/alexandres/vectors/lexvec.enwiki.300d.W%2bC.pos.vectors.gz)
+* English Wikipedia 2015 + [NewsCrawl](http://www.statmt.org/wmt14/translation-task.html) - 7B tokens - 368,999 words
+  - [Word Vectors (398M)](http://nlpserver2.inf.ufrgs.br/alexandres/vectors/lexvec.enwiki%2bnewscrawl.300d.W.pos.vectors.gz)
+  - [Word + Context Vectors (426MB)](http://nlpserver2.inf.ufrgs.br/alexandres/vectors/lexvec.enwiki%2bnewscrawl.300d.W%2bC.pos.vectors.gz)
+
 ## Installation
 
 ### Binary
