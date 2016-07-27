@@ -4,10 +4,10 @@ This is an implementation of the **LexVec word embedding model** (similar to wor
 
 ## Pre-trained Vectors
 
-* English Wikipedia 2015 - 3.8B tokens - 303,517 words
+* English Wikipedia 2015 - 3.8B tokens - 303,517 words - 300 dimensions
   - [Word Vectors (327MB)](http://nlpserver2.inf.ufrgs.br/alexandres/vectors/lexvec.enwiki.300d.W.pos.vectors.gz) 
   - [Word + Context Vectors (351MB)](http://nlpserver2.inf.ufrgs.br/alexandres/vectors/lexvec.enwiki.300d.W%2bC.pos.vectors.gz)
-* English Wikipedia 2015 + [NewsCrawl](http://www.statmt.org/wmt14/translation-task.html) - 7B tokens - 368,999 words
+* English Wikipedia 2015 + [NewsCrawl](http://www.statmt.org/wmt14/translation-task.html) - 7B tokens - 368,999 words - 300 dimensions
   - [Word Vectors (398M)](http://nlpserver2.inf.ufrgs.br/alexandres/vectors/lexvec.enwiki%2bnewscrawl.300d.W.pos.vectors.gz)
   - [Word + Context Vectors (426MB)](http://nlpserver2.inf.ufrgs.br/alexandres/vectors/lexvec.enwiki%2bnewscrawl.300d.W%2bC.pos.vectors.gz)
 
