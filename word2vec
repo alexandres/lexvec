@@ -42,7 +42,7 @@ arg_map = [
 	('read-vocab', 'readvocab', None, False, 'read vocab from file'),
 ]
 
-LEXVEC = os.environ.get('LEXVEC', '/home/nlpserver2/alex/lexvec/lexvec')
+LEXVEC = os.environ.get('LEXVEC', './lexvec')
 
 ignore = ['hs', 'classes', 'binary', 'cbow']
 
