@@ -4,12 +4,33 @@ This is an implementation of the **LexVec word embedding model** (similar to wor
 
 ## Pre-trained Vectors
 
-* English Wikipedia 2015 - 3.8B tokens - 303,517 words - 300 dimensions
-  - [Word Vectors (327MB)](http://nlpserver2.inf.ufrgs.br/alexandres/vectors/lexvec.enwiki.300d.W.pos.vectors.gz) 
-  - [Word + Context Vectors (351MB)](http://nlpserver2.inf.ufrgs.br/alexandres/vectors/lexvec.enwiki.300d.W%2bC.pos.vectors.gz)
 * English Wikipedia 2015 + [NewsCrawl](http://www.statmt.org/wmt14/translation-task.html) - 7B tokens - 368,999 words - 300 dimensions
   - [Word Vectors (398M)](http://nlpserver2.inf.ufrgs.br/alexandres/vectors/lexvec.enwiki%2bnewscrawl.300d.W.pos.vectors.gz)
   - [Word + Context Vectors (426MB)](http://nlpserver2.inf.ufrgs.br/alexandres/vectors/lexvec.enwiki%2bnewscrawl.300d.W%2bC.pos.vectors.gz)
+
+## Evaluation
+
+| Model  | WS353-Sim | WS353-Rel | MEN  | MTurk | RW | Simlex | SCWS | GSem | GSyn | MSR |
+| -----  | :----: | :----: | :----: | :----: | :----: | :----: | :----: | :----: | :----: | :----: |
+| LexVec English Wikipedia 2015 + NewsCrawl, Word | .727 | .619 | .759 | .655 | **.489** | **.384** | **.652** | **81.1%** | **68.7%** | **63.7%** |
+| LexVec English Wikipedia 2015 + NewsCrawl, Word + Context | .734 | **.663** | **.772** | .649 | .476 | .362 | .629 | 79.3% | 62.6% | 56.4% |
+| word2vec Skip-gram | **.773** | .649 | .766 | **.689** | .475 | .354 | .649 | 79.0% | 68.0% | 58.9% |
+
+* GSem, GSyn, and MSR analogies were solved using [3CosMul](http://www.aclweb.org/anthology/W14-1618).
+
+* LexVec was trained using the default parameters, expanded here for comparison:
+
+  ```
+  $ ./lexvec -train enwiki+newscrawl.txt -output lexvecvectors -size 300 -window 2 \
+  -subsample 1e-5 -negative 5 -iterations 5 -minfreq 100 -matrix ppmi
+  ```
+  
+* word2vec Skip-gram was trained using:
+  
+  ```
+  $ ./word2vec -train enwiki+newscrawl.txt -output sgnsvectors -size 300 -window 8 \
+  -sample 1e-5 -negative 5 -hs 0 -binary 0 -cbow 0 -iter 5 -min-count 100
+  ```
 
 ## Installation
 
@@ -28,9 +49,9 @@ If you are using Windows, OS X, 32-bit Linux, or any other OS, follow the instru
 3. Execute the following commands in your terminal:
 
    ```bash
-   go get github.com/alexandres/lexvec
-   cd $GOPATH/src/github.com/alexandres/lexvec
-   go build
+   $ go get github.com/alexandres/lexvec
+   $ cd $GOPATH/src/github.com/alexandres/lexvec
+   $ go build
    ```
 
 ## Usage
@@ -50,9 +71,8 @@ Additionally, we provide a `word2vec` script which implements the exact same int
 ### External Memory
 
 By default, LexVec stores the sparse matrix being factorized in-memory. This can be a problem if your training corpus is large and your system memory limited. We suggest you first try using the in-memory implementation. If you run into Out-Of-Memory issues, try this External Memory approximation.
-xi
 
-`env OUTPUTDIR=output ./external_memory_lexvec.sh -corpus somecorpus -dim 300 ...exactsameoptionsasinmemory`
+`$ env OUTPUTDIR=output ./external_memory_lexvec.sh -corpus somecorpus -dim 300 ...exactsameoptionsasinmemory`
 
 Pre-processing can be accelerated by installing [nsort](http://www.ordinal.com/try.cgi/nsort-i386-3.4.54.rpm) and [pypy](http://pypy.org/) and editing `pairs_to_counts.sh`.
 

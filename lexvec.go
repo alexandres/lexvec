@@ -632,7 +632,13 @@ func main() {
 		corpus.Seek(0, 0)
 		s := createScanner(corpus)
 		coocurrenceCounter := uint64(0)
+
+		// RingBuffer was used in a previous version of LexVec which supported continuous streams of
+		// text without sentence breaks, not limiting sentences to a maximum length. Iis now being used
+		// as a simple vector of length MAX_SENTENCE_LENGTH. It's still in the code in case we re-add
+		// support for continuous streams.
 		buf := NewRingBuffer(MAX_SENTENCE_LENGTH)
+
 		var coocStreamWriter *bufio.Writer
 		if *printCooc {
 			coocStreamWriter = bufio.NewWriter(coocStream)
@@ -930,7 +936,8 @@ func main() {
 								y = mapw.PmiDirect(mapc, p)
 							case LOG_COOC_MATRIX:
 								y = mapw.LogCoocDirect(mapc, p)
-								// case COOC_MATRIX not needed as is exactly p
+							case COOC_MATRIX:
+								y = p
 							}
 						}
 						if !*mi {
