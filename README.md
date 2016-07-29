@@ -23,8 +23,8 @@ This is an implementation of the **LexVec word embedding model** (similar to wor
 * LexVec was trained using the default parameters, expanded here for comparison:
 
   ```
-  $ ./lexvec -train enwiki+newscrawl.txt -output lexvecvectors -size 300 -window 2 \
-  -subsample 1e-5 -negative 5 -iterations 5 -minfreq 100 -matrix ppmi
+  $ ./lexvec -corpus enwiki+newscrawl.txt -output lexvecvectors -dim 300 -window 2 \
+  -subsample 1e-5 -negative 5 -iterations 5 -minfreq 100 -matrix ppmi -model 0
   ```
   
 * word2vec Skip-gram was trained using:
@@ -58,7 +58,7 @@ If you are using Windows, OS X, 32-bit Linux, or any other OS, follow the instru
 
 ## Usage
 
-### In-memory (default, faster)
+### In-memory (default, faster, more accurate)
 
 To get started, run `$ ./demo.sh` which trains a model using the small [text8](http://mattmahoney.net/dc/text8.zip) corpus (100MB from Wikipedia).
 
@@ -72,7 +72,7 @@ Additionally, we provide a `word2vec` script which implements the exact same int
 
 ### External Memory
 
-By default, LexVec stores the sparse matrix being factorized in-memory. This can be a problem if your training corpus is large and your system memory limited. We suggest you first try using the in-memory implementation. If you run into Out-Of-Memory issues, try this External Memory approximation.
+By default, LexVec stores the sparse matrix being factorized in-memory. This can be a problem if your training corpus is large and your system memory limited. We suggest you first try using the in-memory implementation, which achieves higher scores in evaluations. If you run into Out-Of-Memory issues, try this External Memory approximation (not as accurate as in-memory; read [paper](https://arxiv.org/pdf/1606.01283v1) for details).
 
 `$ env OUTPUTDIR=output ./external_memory_lexvec.sh -corpus somecorpus -dim 300 ...exactsameoptionsasinmemory`
 
