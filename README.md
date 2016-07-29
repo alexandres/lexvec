@@ -10,11 +10,13 @@ This is an implementation of the **LexVec word embedding model** (similar to wor
 
 ## Evaluation
 
-| Model  | WS353-Sim | WS353-Rel | MEN  | MTurk | RW | Simlex | SCWS | GSem | GSyn | MSR |
+| Model  | GSem | GSyn | MSR | RW | SimLex | SCWS | WS-Sim | WS-Rel | MEN | MTurk | 
 | -----  | :----: | :----: | :----: | :----: | :----: | :----: | :----: | :----: | :----: | :----: |
-| LexVec English Wikipedia 2015 + NewsCrawl, Word | .727 | .619 | .759 | .655 | **.489** | **.384** | **.652** | **81.1%** | **68.7%** | **63.7%** |
-| LexVec English Wikipedia 2015 + NewsCrawl, Word + Context | .734 | **.663** | **.772** | .649 | .476 | .362 | .629 | 79.3% | 62.6% | 56.4% |
-| word2vec Skip-gram | **.773** | .649 | .766 | **.689** | .475 | .354 | .649 | 79.0% | 68.0% | 58.9% |
+| LexVec, Word | **81.1%** | **68.7%** | **63.7%** | **.489** | **.384** | **.652** | .727 | .619 | .759 | .655 | 
+| LexVec, Word + Context | 79.3% | 62.6% | 56.4% | .476 | .362 | .629 | .734 | **.663** | **.772** | .649 |
+| word2vec Skip-gram | 79.0% | 68.0% | 58.9% | .475 | .354 | .649 | **.773** | .649 | .766 | **.689** |
+
+* All three models were trained using the same English Wikipedia 2015 + NewsCrawl corpus.
 
 * GSem, GSyn, and MSR analogies were solved using [3CosMul](http://www.aclweb.org/anthology/W14-1618).
 
