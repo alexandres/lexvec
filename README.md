@@ -14,7 +14,7 @@ This is an implementation of the **LexVec word embedding model** (similar to wor
 | -----  | :----: | :----: | :----: | :----: | :----: | :----: | :----: | :----: | :----: | :----: |
 | LexVec, Word | **81.1%** | **68.7%** | **63.7%** | **.489** | **.384** | **.652** | .727 | .619 | .759 | .655 | 
 | LexVec, Word + Context | 79.3% | 62.6% | 56.4% | .476 | .362 | .629 | .734 | **.663** | **.772** | .649 |
-| word2vec Skip-gram | 79.0% | 68.0% | 58.9% | .475 | .354 | .649 | **.773** | .649 | .766 | **.689** |
+| word2vec Skip-gram | 78.5% | 66.1% | 56.0% | .471 | .347 | .649 | **.774** | .647 | .759 | **.687** |
 
 * All three models were trained using the same English Wikipedia 2015 + NewsCrawl corpus.
 
@@ -30,7 +30,7 @@ This is an implementation of the **LexVec word embedding model** (similar to wor
 * word2vec Skip-gram was trained using:
   
   ```
-  $ ./word2vec -train enwiki+newscrawl.txt -output sgnsvectors -size 300 -window 8 \
+  $ ./word2vec -train enwiki+newscrawl.txt -output sgnsvectors -size 300 -window 10 \
   -sample 1e-5 -negative 5 -hs 0 -binary 0 -cbow 0 -iter 5 -min-count 100
   ```
 
