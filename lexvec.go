@@ -22,20 +22,21 @@
 
 package main
 
-import "flag"
-import "io"
-import "os"
-import "bufio"
-import "strings"
-import "strconv"
-import "sync"
-import "time"
-
-import "math"
-import "math/rand"
-import "fmt"
-import "sort"
-import "unicode/utf8"
+import (
+	"bufio"
+	"flag"
+	"fmt"
+	"io"
+	"math"
+	"math/rand"
+	"os"
+	"sort"
+	"strconv"
+	"strings"
+	"sync"
+	"time"
+	"unicode/utf8"
+)
 
 const (
 	ERROR = 0
@@ -53,7 +54,7 @@ const (
 )
 
 var verbose int
-var dim, corpusSize uint64
+var dim, corpusSize, rawCorpusSize uint64
 var mVec, mCtx, bVec, bCtx, mVecGrad, mCtxGrad, bVecGrad, bCtxGrad []float64
 var contextDistributionSmoothing, cdsTotal, postSubsample float64
 var useBias, adagrad, externalMemory, positionalContexts, periodIsWhitespace bool
@@ -88,16 +89,11 @@ type Word struct {
 	w         string
 	i         uint64
 	freq      uint64
-	cooc      map[uint64]float64
 	totalCooc float64
 }
 
-func (w *Word) Ppmi(c *Word) float64 {
-	cooc, ok := w.cooc[c.i]
-	if !ok {
-		return 0
-	}
-	return w.PpmiDirect(c, cooc)
+func (w *Word) posW(pos int) string {
+	return fmt.Sprintf("%s_%d", w.w, pos)
 }
 
 func (w *Word) PpmiDirect(c *Word, cooc float64) float64 {
@@ -108,14 +104,6 @@ func (w *Word) PpmiDirect(c *Word, cooc float64) float64 {
 	return ppmi
 }
 
-func (w *Word) Pmi(c *Word) float64 {
-	cooc, ok := w.cooc[c.i]
-	if !ok {
-		cooc = 0
-	}
-	return w.PmiDirect(c, cooc)
-}
-
 func (w *Word) PmiDirect(c *Word, cooc float64) float64 {
 	if cooc < 1 {
 		cooc = 1 // smoothing
@@ -124,23 +112,11 @@ func (w *Word) PmiDirect(c *Word, cooc float64) float64 {
 	return pmi
 }
 
-func (w *Word) LogCooc(c *Word) float64 {
-	cooc, ok := w.cooc[c.i]
-	if !ok {
-		return 0
-	}
-	return w.LogCoocDirect(c, cooc)
-}
-
 func (w *Word) LogCoocDirect(c *Word, cooc float64) float64 {
 	if cooc < 1 {
 		cooc = 1
 	}
 	return math.Log(cooc)
-}
-
-func (w *Word) posW(pos int) string {
-	return fmt.Sprintf("%s_%d", w.w, pos)
 }
 
 type ByFreq []*Word
@@ -292,7 +268,7 @@ func max(a, b int) int {
 	return b
 }
 
-func learn(mapw, mapc *Word, noiseSampler Sampler, r *rand.Rand, noiseSamples int, deltaVec []float64, alpha float64, directCooc float64) float64 {
+func learn(mapw, mapc *Word, coocStorage *CoocStorage, noiseSampler Sampler, r *rand.Rand, noiseSamples int, deltaVec []float64, alpha float64, directCooc float64) float64 {
 	for j := uint64(0); j < uint64(dim); j++ {
 		deltaVec[j] = 0
 	}
@@ -321,10 +297,7 @@ func learn(mapw, mapc *Word, noiseSampler Sampler, r *rand.Rand, noiseSamples in
 				g += bVec[w] + bCtx[c]
 			}
 		} else {
-			cooc, ok := mapw.cooc[mapc.i]
-			if !ok {
-				cooc = 0
-			}
+			cooc := coocStorage.GetCooc(mapw, mapc)
 			g = dot - cooc
 			if useBias {
 				g += bVec[w] + bCtx[c]
@@ -444,6 +417,7 @@ func main() {
 	flag.IntVar(&window, "window", 2, "symmetric window of (window, word, window)")
 	var postWindow = flag.Int("postwindow", 0, "post symmetric window of (window, word, window); if 0 it is set -window")
 	var minFreq = flag.Int("minfreq", 100, "remove from vocab words that occur less that this number of times")
+	var maxVocab = flag.Int("maxvocab", 0, "max vocab size, 0 for no limit")
 	var decayAlpha = flag.Bool("decay", true, "decaying learning rate")
 	var noise = flag.Int("negative", 5, "number of negative samples")
 	var sgNoise = flag.Bool("minibatch", false, "negative sampling per w,c pair rather than per window")
@@ -465,6 +439,8 @@ func main() {
 	flag.BoolVar(&positionalContexts, "pos", true, "use positional contexts")
 	var vectorOutputPath = flag.String("output", "", "where to save vectors")
 	flag.BoolVar(&periodIsWhitespace, "periodiswhitespace", false, "treat period as whitespace")
+	var memoryLimit = flag.Float64("memory", 0., "GB of memory to use (0 to disable cache)")
+	var coocStoragePath = flag.String("coocstorage", "", "where to store tmp cooc file (default is $TMPDIR)")
 
 	flag.Usage = func() {
 		fmt.Printf("Usage: lexvec [options]\nOptions:\n")
@@ -520,14 +496,11 @@ func main() {
 	vocab := make(map[string]*Word)
 	var vocabSize uint64
 	var vocabList []*Word
-	iVocab := make(map[uint64]*Word)
 	ctxVocab := vocab
 	var ctxVocabSize uint64
 	var ctxVocabList []*Word
-	iCtxVocab := iVocab
 	if positionalContexts {
 		ctxVocab = make(map[string]*Word)
-		iCtxVocab = make(map[uint64]*Word)
 	}
 	if len(*readVocabPath) > 0 {
 		logit("reading vocab", true, INFO)
@@ -539,7 +512,7 @@ func main() {
 			s.Scan()
 			freq, err := strconv.ParseUint(s.Text(), 10, 64)
 			check(err)
-			vocab[w] = &Word{w, 0, freq, make(map[uint64]float64), 0}
+			vocab[w] = &Word{w, 0, freq, 0}
 			s.Scan() // kill context-break
 		}
 		if positionalContexts {
@@ -555,9 +528,8 @@ func main() {
 				coocsString := parts[1]
 				coocs, err := strconv.ParseFloat(coocsString, 64)
 				check(err)
-				mapw := &Word{w, i, uint64(coocs), make(map[uint64]float64), coocs}
+				mapw := &Word{w, i, uint64(coocs), coocs}
 				ctxVocab[w] = mapw
-				iCtxVocab[i] = mapw
 				ctxVocabList = append(ctxVocabList, mapw)
 				i++
 			}
@@ -573,7 +545,7 @@ func main() {
 			tok := s.Text()
 			_, ok := vocab[tok]
 			if !ok {
-				vocab[tok] = &Word{tok, 0, 0, make(map[uint64]float64), 0}
+				vocab[tok] = &Word{tok, 0, 0, 0}
 				vocabSize++
 			}
 			vocab[tok].freq += 1
@@ -582,7 +554,7 @@ func main() {
 	var i = uint64(0)
 	var newVocabList []*Word
 	if _, ok := vocab[CTXBREAK]; !ok {
-		vocab[CTXBREAK] = &Word{CTXBREAK, 0, 0, make(map[uint64]float64), 0}
+		vocab[CTXBREAK] = &Word{CTXBREAK, 0, 0, 0}
 	}
 	ctxbreakw = vocab[CTXBREAK]
 	for _, v := range vocab {
@@ -590,12 +562,12 @@ func main() {
 	}
 	sort.Sort(ByFreq(vocabList))
 	for _, w := range vocabList {
-		if w.freq < uint64(*minFreq) {
+		rawCorpusSize += w.freq
+		if w.freq < uint64(*minFreq) || (*maxVocab > 0 && i >= uint64(*maxVocab)) {
 			delete(vocab, w.w)
 			continue
 		}
 		w.i = i
-		iVocab[i] = w
 		i++
 		newVocabList = append(newVocabList, w)
 		corpusSize += w.freq
@@ -615,9 +587,8 @@ func main() {
 					continue
 				}
 				posW := w.posW(j)
-				w := &Word{posW, i, 0, make(map[uint64]float64), 0}
+				w := &Word{posW, i, 0, 0}
 				ctxVocab[posW] = w
-				iCtxVocab[i] = w
 				i++
 				ctxVocabList = append(ctxVocabList, w)
 			}
@@ -625,7 +596,20 @@ func main() {
 	}
 	vocabSize = uint64(len(vocabList))
 	ctxVocabSize = uint64(len(ctxVocabList))
-	logit(fmt.Sprintf("vocab size: %d\ncontext vocab size: %d\ncorpus size: %d", vocabSize, ctxVocabSize, corpusSize), true, INFO)
+	logit(fmt.Sprintf("vocab size: %d\ncontext vocab size: %d\ncorpus size: %d\nraw corpus size (only valid when constructing vocab): %d", vocabSize, ctxVocabSize, corpusSize, rawCorpusSize), true, INFO)
+	logit("initializing cooc storage", true, DEBUG)
+	var cacheMemory = *memoryLimit * 0.1 * math.Pow(1024., 3)
+	var writeBuffer = int(cacheMemory * .5)
+	var cacheSize = int(cacheMemory) - writeBuffer
+	var coocStorage *CoocStorage
+	if *memoryLimit == 0 {
+		coocStorage = &CoocStorage{NewDictMatrixStorage(0., vocabSize, ctxVocabSize)}
+	} else {
+		ldb, err := NewLevelDBStore(*coocStoragePath, cacheSize, 4*1024, writeBuffer)
+		check(err)
+		defer ldb.Cleanup()
+		coocStorage = &CoocStorage{NewCachedMatrixStorage(ldb, 0., vocabSize, ctxVocabSize, *memoryLimit)}
+	}
 	var noiseSampler Sampler
 	if !externalMemory || *printCooc {
 		logit("identify coocurrence", true, INFO)
@@ -692,11 +676,7 @@ func main() {
 							coocStreamWriter.WriteString(mapc.w)
 							coocStreamWriter.WriteString("\n")
 						} else {
-							cooc, ok := target.cooc[mapc.i]
-							if !ok {
-								cooc = 0
-							}
-							target.cooc[mapc.i] = cooc + inc
+							coocStorage.AddCooc(target, mapc, inc)
 						}
 					}
 				}
@@ -803,23 +783,23 @@ func main() {
 	logit(fmt.Sprintf("cds total: %f", cdsTotal), true, INFO)
 	if !externalMemory {
 		logit("calculating "+matrix+" matrix", true, INFO)
-		for _, w := range vocabList {
-			ppmiTotal := float64(0)
-			for c, p := range w.cooc {
-				switch matrix {
-				case PPMI_MATRIX:
-					p = w.Ppmi(iCtxVocab[c])
-				case PMI_MATRIX:
-					p = w.Pmi(iCtxVocab[c])
-				case LOG_COOC_MATRIX:
-					p = w.LogCooc(iCtxVocab[c])
-					// case COOC_MATRIX not needed as is exactly p
-				}
-				w.cooc[c] = p
-				ppmiTotal += p * p
+		coocStorage.Transform(func(row, col uint64, v float64) float64 {
+			w := vocabList[row]
+			c := ctxVocabList[col]
+			switch matrix {
+			case PPMI_MATRIX:
+				return w.PpmiDirect(c, v)
+			case PMI_MATRIX:
+				return w.PmiDirect(c, v)
+			case LOG_COOC_MATRIX:
+				return w.LogCoocDirect(c, v)
+				// case COOC_MATRIX not needed as is exactly p
 			}
-		}
+			return v
+		})
 	}
+	err = coocStorage.ReadOnly()
+	check(err)
 	mVec = make([]float64, vocabSize*dim)
 	mCtx = make([]float64, ctxVocabSize*dim)
 	bVec = make([]float64, vocabSize)
@@ -856,16 +836,19 @@ func main() {
 		}
 	}
 	logit("running lexvec", true, INFO)
-	processed := uint64(0)
-	bytesRead := uint64(0)
+	processed := make([]uint64, *numThreads)
+	bytesRead := make([]uint64, *numThreads)
+	for j := 0; j < *numThreads; j++ {
+		processed[j] = 0
+		bytesRead[j] = 0
+	}
 	var wg sync.WaitGroup
 	avgError := float64(0)
 	avgErrorNum := uint64(0)
-	refAlpha := *initialAlpha
+	alpha := *initialAlpha
 	for threadId := 0; threadId < *numThreads; threadId++ {
 		wg.Add(1)
 		go func(threadId int) {
-			alpha := *initialAlpha
 			randn := rand.New(rand.NewSource(int64(threadId)))
 			deltaVec := make([]float64, dim)
 			if externalMemory {
@@ -878,6 +861,7 @@ func main() {
 				}
 				for iter := 0; iter < *iterations; iter++ {
 					_, err := coocStream.Seek(coocStreamOffsetStart, 0)
+					lastCurPos := uint64(coocStreamOffsetStart)
 					check(err)
 
 					s := bufio.NewScanner(coocStream)
@@ -894,17 +878,19 @@ func main() {
 						if curPos > coocStreamOffsetEnd {
 							break
 						}
-						bytesRead += uint64(len(s.Text()))
-						processed++
-						if processed%1000 == 0 {
+						bytesRead[threadId] += uint64(curPos) - lastCurPos
+						lastCurPos = uint64(curPos)
+						processed[threadId]++
+						if threadId == 0 && processed[0]%1000 == 0 {
 							if *decayAlpha && !adagrad {
-								alpha = *initialAlpha * (float64(1) - (float64(bytesRead) / (float64(coocStreamFileSize) * float64(*iterations))))
+								var totalBytesRead uint64
+								for j := 0; j < *numThreads; j++ {
+									totalBytesRead += bytesRead[j]
+								}
+								alpha = *initialAlpha * (float64(1) - (float64(totalBytesRead) / (float64(coocStreamFileSize) * float64(*iterations))))
 								if alpha < *initialAlpha*0.0001 {
 									alpha = *initialAlpha * 0.0001
 								}
-							}
-							if threadId == 0 {
-								refAlpha = alpha
 							}
 						}
 						parts := strings.Split(s.Text(), " ")
@@ -944,7 +930,7 @@ func main() {
 							learningIterations = 1
 						}
 						for i := uint64(0); i < learningIterations; i++ {
-							err := learn(mapw, mapc, noiseSampler, randn, 0, deltaVec, alpha, y)
+							err := learn(mapw, mapc, coocStorage, noiseSampler, randn, 0, deltaVec, alpha, y)
 							avgError += err
 							avgErrorNum++
 						}
@@ -983,16 +969,17 @@ func main() {
 						if curPos > corpusOffsetEnd {
 							break
 						}
-						processed++
-						if processed%1000 == 0 {
+						processed[threadId]++
+						if threadId == 0 && processed[0]%1000 == 0 {
 							if *decayAlpha && !adagrad {
-								alpha = *initialAlpha * (float64(1) - (float64(processed) / (float64(corpusSize) * float64(*iterations))))
+								var totalProcessed uint64
+								for j := 0; j < *numThreads; j++ {
+									totalProcessed += processed[j]
+								}
+								alpha = *initialAlpha * (float64(1) - (float64(totalProcessed) / (float64(rawCorpusSize) * float64(*iterations))))
 								if alpha < *initialAlpha*0.0001 {
 									alpha = *initialAlpha * 0.0001
 								}
-							}
-							if threadId == 0 {
-								refAlpha = alpha
 							}
 						}
 						wordInStream := s.Text()
@@ -1032,7 +1019,7 @@ func main() {
 									if *sgNoise {
 										wNoise = *noise
 									}
-									err := learn(target, mapc, noiseSampler, randn, wNoise, deltaVec, alpha, 0)
+									err := learn(target, mapc, coocStorage, noiseSampler, randn, wNoise, deltaVec, alpha, 0)
 									avgError += err
 									avgErrorNum++
 								}
@@ -1045,7 +1032,7 @@ func main() {
 										for mapc == ctxbreakw {
 											mapc = noiseSampler.Sample(randn)
 										}
-										err := learn(target, mapc, noiseSampler, randn, 0, deltaVec, alpha, 0)
+										err := learn(target, mapc, coocStorage, noiseSampler, randn, 0, deltaVec, alpha, 0)
 										avgError += err
 										avgErrorNum++
 									}
@@ -1071,13 +1058,17 @@ func main() {
 	var done = false
 	go func() {
 		time.Sleep(time.Second)
-		previousProcessed := processed
+		var previousProcessed uint64
 		previousTime := time.Now()
 		for !done {
-			speed := float64(processed-previousProcessed) / float64(*numThreads) / float64(1000) / time.Since(previousTime).Seconds()
-			previousProcessed = processed
+			var totalProcessed uint64
+			for j := 0; j < *numThreads; j++ {
+				totalProcessed += processed[j]
+			}
+			speed := float64(totalProcessed-previousProcessed) / float64(*numThreads) / float64(1000) / time.Since(previousTime).Seconds()
+			previousProcessed = totalProcessed
 			previousTime = time.Now()
-			logit(fmt.Sprintf("%d alpha %f speed %.1fk words/thread/s\r", processed, refAlpha, speed), false, DEBUG)
+			logit(fmt.Sprintf("%d alpha %f speed %.1fk words/thread/s\r", totalProcessed, alpha, speed), false, DEBUG)
 			time.Sleep(time.Second)
 		}
 	}()

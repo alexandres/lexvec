@@ -1,14 +1,20 @@
 # LexVec
 
-This is an implementation of the **LexVec word embedding model** (similar to word2vec and GloVe) that achieves state of the art results in multiple NLP tasks, as described in [this paper](https://arxiv.org/pdf/1606.00819v2) and [this one](https://arxiv.org/pdf/1606.01283v1).
+This is an implementation of the **LexVec word embedding model** (similar to word2vec and GloVe) that achieves state of the art results in multiple NLP tasks, as described in [this paper](http://anthology.aclweb.org/P16-2068) and [this one](https://arxiv.org/pdf/1606.01283v1).
 
 ## Pre-trained Vectors
 
+* [Common Crawl](http://web-language-models.s3-website-us-east-1.amazonaws.com/wmt16/deduped/en-new.xz) - 58B tokens - 2,000,000 words - 300 dimensions
+  - [Word Vectors (2.2GB)](http://nlpserver2.inf.ufrgs.br/alexandres/vectors/lexvec.commoncrawl.300d.W.pos.vectors.gz)
+  - [Word + Context Vectors (2.3GB)](http://nlpserver2.inf.ufrgs.br/alexandres/vectors/lexvec.commoncrawl.300d.W+C.pos.vectors.gz)
+
 * English Wikipedia 2015 + [NewsCrawl](http://www.statmt.org/wmt14/translation-task.html) - 7B tokens - 368,999 words - 300 dimensions
-  - [Word Vectors (398M)](http://nlpserver2.inf.ufrgs.br/alexandres/vectors/lexvec.enwiki%2bnewscrawl.300d.W.pos.vectors.gz)
+  - [Word Vectors (398MB)](http://nlpserver2.inf.ufrgs.br/alexandres/vectors/lexvec.enwiki%2bnewscrawl.300d.W.pos.vectors.gz)
   - [Word + Context Vectors (426MB)](http://nlpserver2.inf.ufrgs.br/alexandres/vectors/lexvec.enwiki%2bnewscrawl.300d.W%2bC.pos.vectors.gz)
 
 ## Evaluation
+
+### In-memory, large corpus
 
 | Model  | GSem | GSyn | MSR | RW | SimLex | SCWS | WS-Sim | WS-Rel | MEN | MTurk | 
 | -----  | :----: | :----: | :----: | :----: | :----: | :----: | :----: | :----: | :----: | :----: |
@@ -33,6 +39,34 @@ This is an implementation of the **LexVec word embedding model** (similar to wor
   $ ./word2vec -train enwiki+newscrawl.txt -output sgnsvectors -size 300 -window 10 \
   -sample 1e-5 -negative 5 -hs 0 -binary 0 -cbow 0 -iter 5 -min-count 100
   ```
+
+### External memory, huge corpus
+
+| Model  | GSem | GSyn | MSR | RW | SimLex | SCWS | WS-Sim | WS-Rel | MEN | MTurk | 
+| -----  | :----: | :----: | :----: | :----: | :----: | :----: | :----: | :----: | :----: | :----: |
+| LexVec, Word | 72.6% | 72.7% | 70.5% | .499 | **.459** | **.668** | .761 | .669 | .800 | .707 | 
+| LexVec, Word + Context | 81.1% | 67.8% | 65.0% | .489 | .418 | .644 | **.771** | **.688** | **.813** | **.712** |
+| word2vec | 73.3% | **75.1%** | **75.1%** | **.515** | .436 | .655 | .741 | .610 | .699 | .680 |
+| GloVe | **81.8%** | 72.4% | 74.3% | .384 | .374 | .540 | .698 | .571 | .743 | .645 |
+
+* All models use vectors with 300 dimensions.
+
+* GSem, GSyn, and MSR analogies were solved using [3CosMul](http://www.aclweb.org/anthology/W14-1618).
+
+* LexVec was trained using [this release of Common Crawl](http://web-language-models.s3-website-us-east-1.amazonaws.com/wmt16/deduped/en-new.xz) 
+which contains **58B tokens**, restricting the vocabulary to the 2 million most frequent words, using the following command:
+
+  ```
+  $ OUTPUTDIR=output ./external_memory_lexvec.sh -corpus common_crawl.txt -negative 1 \
+  -model 0 -maxvocab 2000000 -minfreq 0 -window 2                                             
+  ```  
+
+  *Note: we restricted negative sampling to 1 because of computational constraints in our lab. We believe using the default value of 5 can improve model performance based on our experiments with smaller corpora. If you have spare computing capacity and would like to help, please [contact me](mailto:atsalle@inf.ufrgs.br).*  
+  
+* [The pre-trained word2vec vectors](https://drive.google.com/file/d/0B7XkCwpI5KDYNlNUTTlSS21pQmM/edit?usp=sharing) were trained using the unreleased Google News corpus containing **100B  tokens**, restricting the vocabulary to the 3 million most frequent words.
+
+* [The pre-trained GloVe vectors](http://nlp.stanford.edu/data/wordvecs/glove.42B.300d.zip) were trained using Common Crawl (release unknown) containing **42B  tokens**, restricting the vocabulary to the 1.9 million most frequent words.
+
 
 ## Installation
 
@@ -80,7 +114,7 @@ Pre-processing can be accelerated by installing [nsort](http://www.ordinal.com/t
 
 ## References
 
-Salle, A., Idiart, M., & Villavicencio, A. (2016). [Matrix Factorization using Window Sampling and Negative Sampling for Improved Word Representations](https://arxiv.org/pdf/1606.00819v2). arXiv preprint arXiv:1606.00819.
+Salle, Alexandre, Marco Idiart, and Aline Villavicencio. [Matrix Factorization using Window Sampling and Negative Sampling for Improved Word Representations.](http://anthology.aclweb.org/P16-2068) The 54th Annual Meeting of the Association for Computational Linguistics. 2016.
 
 Salle, A., Idiart, M., & Villavicencio, A. (2016). [Enhancing the LexVec Distributed Word Representation Model Using Positional Contexts and External Memory](https://arxiv.org/pdf/1606.01283v1). arXiv preprint arXiv:1606.01283.
 
