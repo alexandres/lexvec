@@ -496,11 +496,14 @@ func main() {
 	vocab := make(map[string]*Word)
 	var vocabSize uint64
 	var vocabList []*Word
+	iVocab := make(map[uint64]*Word)
 	ctxVocab := vocab
 	var ctxVocabSize uint64
 	var ctxVocabList []*Word
+	iCtxVocab := iVocab
 	if positionalContexts {
 		ctxVocab = make(map[string]*Word)
+		iCtxVocab = make(map[uint64]*Word)
 	}
 	if len(*readVocabPath) > 0 {
 		logit("reading vocab", true, INFO)
@@ -530,6 +533,7 @@ func main() {
 				check(err)
 				mapw := &Word{w, i, uint64(coocs), coocs}
 				ctxVocab[w] = mapw
+				iCtxVocab[i] = mapw
 				ctxVocabList = append(ctxVocabList, mapw)
 				i++
 			}
@@ -568,6 +572,7 @@ func main() {
 			continue
 		}
 		w.i = i
+		iVocab[i] = w
 		i++
 		newVocabList = append(newVocabList, w)
 		corpusSize += w.freq
@@ -589,6 +594,7 @@ func main() {
 				posW := w.posW(j)
 				w := &Word{posW, i, 0, 0}
 				ctxVocab[posW] = w
+				iCtxVocab[i] = w
 				i++
 				ctxVocabList = append(ctxVocabList, w)
 			}
@@ -785,7 +791,7 @@ func main() {
 		logit("calculating "+matrix+" matrix", true, INFO)
 		coocStorage.Transform(func(row, col uint64, v float64) float64 {
 			w := vocabList[row]
-			c := ctxVocabList[col]
+			c := iCtxVocab[col]
 			switch matrix {
 			case PPMI_MATRIX:
 				return w.PpmiDirect(c, v)
