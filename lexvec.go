@@ -439,8 +439,6 @@ func main() {
 	flag.BoolVar(&positionalContexts, "pos", true, "use positional contexts")
 	var vectorOutputPath = flag.String("output", "", "where to save vectors")
 	flag.BoolVar(&periodIsWhitespace, "periodiswhitespace", false, "treat period as whitespace")
-	var memoryLimit = flag.Float64("memory", 0., "GB of memory to use (0 to disable cache)")
-	var coocStoragePath = flag.String("coocstorage", "", "where to store tmp cooc file (default is $TMPDIR)")
 
 	flag.Usage = func() {
 		fmt.Printf("Usage: lexvec [options]\nOptions:\n")
@@ -604,18 +602,7 @@ func main() {
 	ctxVocabSize = uint64(len(ctxVocabList))
 	logit(fmt.Sprintf("vocab size: %d\ncontext vocab size: %d\ncorpus size: %d\nraw corpus size (only valid when constructing vocab): %d", vocabSize, ctxVocabSize, corpusSize, rawCorpusSize), true, INFO)
 	logit("initializing cooc storage", true, DEBUG)
-	var cacheMemory = *memoryLimit * 0.1 * math.Pow(1024., 3)
-	var writeBuffer = int(cacheMemory * .5)
-	var cacheSize = int(cacheMemory) - writeBuffer
-	var coocStorage *CoocStorage
-	if *memoryLimit == 0 {
-		coocStorage = &CoocStorage{NewDictMatrixStorage(0., vocabSize, ctxVocabSize)}
-	} else {
-		ldb, err := NewLevelDBStore(*coocStoragePath, cacheSize, 4*1024, writeBuffer)
-		check(err)
-		defer ldb.Cleanup()
-		coocStorage = &CoocStorage{NewCachedMatrixStorage(ldb, 0., vocabSize, ctxVocabSize, *memoryLimit)}
-	}
+	coocStorage := &CoocStorage{NewDictMatrixStorage(0., vocabSize, ctxVocabSize)}
 	var noiseSampler Sampler
 	if !externalMemory || *printCooc {
 		logit("identify coocurrence", true, INFO)
@@ -810,7 +797,6 @@ func main() {
 			return v
 		})
 	}
-	err = coocStorage.ReadOnly()
 	check(err)
 	mVec = make([]float64, vocabSize*dim)
 	mCtx = make([]float64, ctxVocabSize*dim)
