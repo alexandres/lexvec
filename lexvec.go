@@ -531,7 +531,7 @@ func main() {
 				coocsString := parts[1]
 				coocs, err := strconv.ParseFloat(coocsString, 64)
 				check(err)
-				mapw := &Word{w, i, uint64(coocs), coocs}
+				mapw := &Word{w, i, uint64(coocs), 0}
 				ctxVocab[w] = mapw
 				iCtxVocab[i] = mapw
 				ctxVocabList = append(ctxVocabList, mapw)
@@ -699,6 +699,7 @@ func main() {
 		}
 		if *printCooc {
 			logit("creating vocab sampling distribution", true, INFO)
+			sort.Sort(ByFreq(ctxVocabList))
 			noiseSampler = NewUnigramDist(ctxVocabList, 1e8, *unigramPower)
 			// now add the negative samples
 			logit("adding negative samples", true, INFO)
@@ -780,6 +781,11 @@ func main() {
 			coocs, err := strconv.ParseFloat(coocsString, 64)
 			check(err)
 			vocab[w].totalCooc = coocs
+		}
+		if positionalContexts {
+			for _, w := range ctxVocabList {
+				w.totalCooc = float64(w.freq)
+			}
 		}
 		coocTotalsStream.Close()
 	}
@@ -887,7 +893,7 @@ func main() {
 						bytesRead[threadId] += uint64(curPos) - lastCurPos
 						lastCurPos = uint64(curPos)
 						processed[threadId]++
-						if threadId == 0 && processed[0]%1000 == 0 {
+						if processed[threadId]%10000 == 0 {
 							if *decayAlpha && !adagrad {
 								var totalBytesRead uint64
 								for j := 0; j < *numThreads; j++ {
@@ -976,7 +982,7 @@ func main() {
 							break
 						}
 						processed[threadId]++
-						if threadId == 0 && processed[0]%1000 == 0 {
+						if processed[threadId]%10000 == 0 {
 							if *decayAlpha && !adagrad {
 								var totalProcessed uint64
 								for j := 0; j < *numThreads; j++ {
