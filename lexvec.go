@@ -54,7 +54,8 @@ const (
 )
 
 var verbose int
-var dim, corpusSize, rawCorpusSize uint64
+var dim uint32
+var corpusSize, rawCorpusSize uint64
 var mVec, mCtx, bVec, bCtx, mVecGrad, mCtxGrad, bVecGrad, bCtxGrad []float64
 var contextDistributionSmoothing, cdsTotal, postSubsample float64
 var useBias, adagrad, externalMemory, positionalContexts, periodIsWhitespace bool
@@ -87,7 +88,7 @@ func logit(msg string, lineBreak bool, level int) {
 
 type Word struct {
 	w         string
-	i         uint64
+	i         uint32
 	freq      uint64
 	totalCooc float64
 }
@@ -269,7 +270,7 @@ func max(a, b int) int {
 }
 
 func learn(mapw, mapc *Word, coocStorage *CoocStorage, noiseSampler Sampler, r *rand.Rand, noiseSamples int, deltaVec []float64, alpha float64, directCooc float64) float64 {
-	for j := uint64(0); j < uint64(dim); j++ {
+	for j := uint32(0); j < dim; j++ {
 		deltaVec[j] = 0
 	}
 	err := float64(0)
@@ -287,7 +288,7 @@ func learn(mapw, mapc *Word, coocStorage *CoocStorage, noiseSampler Sampler, r *
 		}
 		c := mapc.i
 		dot := float64(0)
-		for j := uint64(0); j < uint64(dim); j++ {
+		for j := uint32(0); j < dim; j++ {
 			dot += mVec[w*dim+j] * mCtx[c*dim+j]
 		}
 		g := float64(0)
@@ -305,7 +306,7 @@ func learn(mapw, mapc *Word, coocStorage *CoocStorage, noiseSampler Sampler, r *
 		}
 		err += 0.5 * g * g
 		g *= alpha
-		for j := uint64(0); j < uint64(dim); j++ {
+		for j := uint32(0); j < dim; j++ {
 			mVecG := g * mCtx[c*dim+j]
 			deltaVec[j] += mVecG
 			mCtxG := g * mVec[w*dim+j]
@@ -334,7 +335,7 @@ func learn(mapw, mapc *Word, coocStorage *CoocStorage, noiseSampler Sampler, r *
 			panic("nan")
 		}
 	}
-	for j := uint64(0); j < uint64(dim); j++ {
+	for j := uint32(0); j < dim; j++ {
 		mVecGAdj := deltaVec[j]
 		if adagrad {
 			mVecGAdj /= math.Sqrt(mVecGrad[w*dim+j])
@@ -451,7 +452,7 @@ func main() {
 	if postSubsample == 0 {
 		postSubsample = *subsample
 	}
-	dim = uint64(*dimRaw)
+	dim = uint32(*dimRaw)
 	var err error
 	var coocStream *os.File
 	var coocStreamFileSize int64
@@ -492,16 +493,16 @@ func main() {
 		}
 	}
 	vocab := make(map[string]*Word)
-	var vocabSize uint64
+	var vocabSize uint32
 	var vocabList []*Word
-	iVocab := make(map[uint64]*Word)
+	iVocab := make(map[uint32]*Word)
 	ctxVocab := vocab
-	var ctxVocabSize uint64
+	var ctxVocabSize uint32
 	var ctxVocabList []*Word
 	iCtxVocab := iVocab
 	if positionalContexts {
 		ctxVocab = make(map[string]*Word)
-		iCtxVocab = make(map[uint64]*Word)
+		iCtxVocab = make(map[uint32]*Word)
 	}
 	if len(*readVocabPath) > 0 {
 		logit("reading vocab", true, INFO)
@@ -517,7 +518,7 @@ func main() {
 			s.Scan() // kill context-break
 		}
 		if positionalContexts {
-			var i uint64
+			var i uint32
 			logit("reading context vocab", true, INFO)
 			vocabFile, err := os.Open(*readVocabPath + CONTEXT_SUFFIX)
 			check(err)
@@ -553,7 +554,7 @@ func main() {
 			vocab[tok].freq += 1
 		}
 	}
-	var i = uint64(0)
+	var i = uint32(0)
 	var newVocabList []*Word
 	if _, ok := vocab[CTXBREAK]; !ok {
 		vocab[CTXBREAK] = &Word{CTXBREAK, 0, 0, 0}
@@ -565,7 +566,7 @@ func main() {
 	sort.Sort(ByFreq(vocabList))
 	for _, w := range vocabList {
 		rawCorpusSize += w.freq
-		if w.freq < uint64(*minFreq) || (*maxVocab > 0 && i >= uint64(*maxVocab)) {
+		if w.freq < uint64(*minFreq) || (*maxVocab > 0 && i >= uint32(*maxVocab)) {
 			delete(vocab, w.w)
 			continue
 		}
@@ -579,7 +580,7 @@ func main() {
 	if !positionalContexts {
 		ctxVocabList = vocabList
 	} else if len(ctxVocabList) == 0 {
-		var i uint64
+		var i uint32
 		logit("creating positional vocab words", true, INFO)
 		for _, w := range vocabList {
 			if w == ctxbreakw {
@@ -598,8 +599,8 @@ func main() {
 			}
 		}
 	}
-	vocabSize = uint64(len(vocabList))
-	ctxVocabSize = uint64(len(ctxVocabList))
+	vocabSize = uint32(len(vocabList))
+	ctxVocabSize = uint32(len(ctxVocabList))
 	logit(fmt.Sprintf("vocab size: %d\ncontext vocab size: %d\ncorpus size: %d\nraw corpus size (only valid when constructing vocab): %d", vocabSize, ctxVocabSize, corpusSize, rawCorpusSize), true, INFO)
 	logit("initializing cooc storage", true, DEBUG)
 	coocStorage := &CoocStorage{NewDictMatrixStorage(0., vocabSize, ctxVocabSize)}
@@ -782,7 +783,7 @@ func main() {
 	logit(fmt.Sprintf("cds total: %f", cdsTotal), true, INFO)
 	if !externalMemory {
 		logit("calculating "+matrix+" matrix", true, INFO)
-		coocStorage.Transform(func(row, col uint64, v float64) float64 {
+		coocStorage.Transform(func(row, col uint32, v float64) float64 {
 			w := vocabList[row]
 			c := iCtxVocab[col]
 			switch matrix {
@@ -809,8 +810,8 @@ func main() {
 		bCtxGrad = make([]float64, ctxVocabSize)
 	}
 	logit("create vectors", true, INFO)
-	for j := uint64(0); j < vocabSize; j++ {
-		for k := uint64(0); k < dim; k++ {
+	for j := uint32(0); j < vocabSize; j++ {
+		for k := uint32(0); k < dim; k++ {
 			mVec[j*dim+k] = (randng.Float64() - 0.5) / float64(dim)
 			if adagrad {
 				mVecGrad[j*dim+k] = 1.0
@@ -821,8 +822,8 @@ func main() {
 			bVecGrad[j] = 1.0
 		}
 	}
-	for j := uint64(0); j < ctxVocabSize; j++ {
-		for k := uint64(0); k < dim; k++ {
+	for j := uint32(0); j < ctxVocabSize; j++ {
+		for k := uint32(0); k < dim; k++ {
 			mCtx[j*dim+k] = (randng.Float64() - 0.5) / float64(dim)
 			if adagrad {
 				mCtxGrad[j*dim+k] = 1.0
@@ -1079,7 +1080,7 @@ func main() {
 	outputStream.WriteString(fmt.Sprintf("%d %d\n", len(vocabList), dim))
 	for _, w := range vocabList {
 		outputStream.WriteString(w.w)
-		for j := uint64(0); j < dim; j++ {
+		for j := uint32(0); j < dim; j++ {
 			v := mVec[w.i*dim+j]
 			if *model == 2 {
 				if !positionalContexts {
@@ -1107,7 +1108,7 @@ func main() {
 		fmt.Fprintf(ctxOutputStream, "%d %d\n", len(ctxVocabList), dim)
 		for _, w := range ctxVocabList {
 			ctxOutputStream.WriteString(w.w)
-			for j := uint64(0); j < dim; j++ {
+			for j := uint32(0); j < dim; j++ {
 				fmt.Fprintf(ctxOutputStream, " %f", mCtx[w.i*dim+j])
 			}
 			ctxOutputStream.WriteString("\n")

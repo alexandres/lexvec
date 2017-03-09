@@ -4,11 +4,11 @@ type CoocStorage struct {
 	storage MatrixStorage
 }
 
-type TransformFunc func(row, col uint64, v float64) float64
+type TransformFunc func(row, col uint32, v float64) float64
 
 type MatrixStorage interface {
-	Get(row, col uint64) float64
-	Set(row, col uint64, v float64)
+	Get(row, col uint32) float64
+	Set(row, col uint32, v float64)
 	Transform(f TransformFunc)
 }
 
@@ -34,18 +34,18 @@ func (coocStorage *CoocStorage) Transform(f TransformFunc) {
 
 type DictMatrixStorage struct {
 	initialValue float64
-	mem          []map[uint64]float64
+	mem          []map[uint32]float64
 }
 
-func NewDictMatrixStorage(initialValue float64, rows, cols uint64) MatrixStorage {
-	var mem []map[uint64]float64
-	for i := uint64(0); i < rows; i++ {
-		mem = append(mem, make(map[uint64]float64))
+func NewDictMatrixStorage(initialValue float64, rows, cols uint32) MatrixStorage {
+	var mem []map[uint32]float64
+	for i := uint32(0); i < rows; i++ {
+		mem = append(mem, make(map[uint32]float64))
 	}
 	return &DictMatrixStorage{initialValue, mem}
 }
 
-func (m *DictMatrixStorage) Get(row, col uint64) float64 {
+func (m *DictMatrixStorage) Get(row, col uint32) float64 {
 	v, ok := m.mem[row][col]
 	if !ok {
 		return m.initialValue
@@ -53,14 +53,14 @@ func (m *DictMatrixStorage) Get(row, col uint64) float64 {
 	return v
 }
 
-func (m *DictMatrixStorage) Set(row, col uint64, v float64) {
+func (m *DictMatrixStorage) Set(row, col uint32, v float64) {
 	m.mem[row][col] = v
 }
 
 func (m *DictMatrixStorage) Transform(f TransformFunc) {
 	for i, d := range m.mem {
 		for j, v := range d {
-			m.mem[i][j] = f(uint64(i), uint64(j), v)
+			m.mem[i][j] = f(uint32(i), uint32(j), v)
 		}
 	}
 }
