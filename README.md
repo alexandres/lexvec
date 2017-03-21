@@ -44,8 +44,8 @@ This is an implementation of the **LexVec word embedding model** (similar to wor
 
 | Model  | GSem | GSyn | MSR | RW | SimLex | SCWS | WS-Sim | WS-Rel | MEN | MTurk | 
 | -----  | :----: | :----: | :----: | :----: | :----: | :----: | :----: | :----: | :----: | :----: |
-| LexVec, Word | 72.6% | 72.7% | 70.5% | .499 | **.459** | **.668** | .761 | .669 | .800 | .707 | 
-| LexVec, Word + Context | 81.1% | 67.8% | 65.0% | .489 | .418 | .644 | **.771** | **.688** | **.813** | **.712** |
+| LexVec, Word | 76.4% | 71.3% | 70.6% | .508 | **.444** | **.667** | .762 | .668 | .802 | .716 | 
+| LexVec, Word + Context | 80.4% | 66.6% | 65.1% | .496 | .419 | .644 | **.775** | **.702** | **.813** | **.712** |
 | word2vec | 73.3% | **75.1%** | **75.1%** | **.515** | .436 | .655 | .741 | .610 | .699 | .680 |
 | GloVe | **81.8%** | 72.4% | 74.3% | .384 | .374 | .540 | .698 | .571 | .743 | .645 |
 
@@ -57,11 +57,9 @@ This is an implementation of the **LexVec word embedding model** (similar to wor
 which contains **58B tokens**, restricting the vocabulary to the 2 million most frequent words, using the following command:
 
   ```
-  $ OUTPUTDIR=output ./external_memory_lexvec.sh -corpus common_crawl.txt -negative 1 \
+  $ OUTPUTDIR=output ./external_memory_lexvec.sh -corpus common_crawl.txt -negative 3 \
   -model 0 -maxvocab 2000000 -minfreq 0 -window 2                                             
   ```  
-
-  *Note: we restricted negative sampling to 1 because of computational constraints in our lab. We believe using the default value of 5 can improve model performance based on our experiments with smaller corpora. If you have spare computing capacity and would like to help, please [contact me](mailto:atsalle@inf.ufrgs.br).*  
   
 * [The pre-trained word2vec vectors](https://drive.google.com/file/d/0B7XkCwpI5KDYNlNUTTlSS21pQmM/edit?usp=sharing) were trained using the unreleased Google News corpus containing **100B  tokens**, restricting the vocabulary to the 3 million most frequent words.
 
