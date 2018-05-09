@@ -7,7 +7,7 @@ This is an implementation of the **LexVec word embedding model** (similar to wor
 ### Subword LexVec
 * [Common Crawl](http://web-language-models.s3-website-us-east-1.amazonaws.com/wmt16/deduped/en-new.xz) - 58B tokens, cased - 2,000,000 words - 300 dimensions
   - [Word Vectors (2.1GB)](http://nlpserver2.inf.ufrgs.br/alexandres/vectors/lexvec.ngramsubwords.300d.W.pos.vectors.gz)
-  - [Binary model (8.6GB)](http://nlpserver2.inf.ufrgs.br/alexandres/vectors/lexvec.commoncrawl.300d.W+C.pos.bin.gz) - use this to [compute vector for out-of-vocabulary (OOV) words](#oov)
+  - [Binary model (8.6GB)](http://nlpserver2.inf.ufrgs.br/alexandres/vectors/lexvec.ngramsubwords.300d.W.pos.bin.gz) - use this to [compute vector for out-of-vocabulary (OOV) words](#oov)
 
 ### LexVec
 
