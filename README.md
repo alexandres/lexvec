@@ -1,10 +1,17 @@
 # LexVec
 
-This is an implementation of the **LexVec word embedding model** (similar to word2vec and GloVe) that achieves state of the art results in multiple NLP tasks, as described in [this paper](http://anthology.aclweb.org/P16-2068) and [this one](https://arxiv.org/pdf/1606.01283v1).
+This is an implementation of the **LexVec word embedding model** (similar to word2vec and GloVe) that achieves state of the art results in multiple NLP tasks, as described in [these papers](#refs).
 
 ## Pre-trained Vectors
 
-* [Common Crawl](http://web-language-models.s3-website-us-east-1.amazonaws.com/wmt16/deduped/en-new.xz) - 58B tokens - 2,000,000 words - 300 dimensions
+### Subword LexVec
+* [Common Crawl](http://web-language-models.s3-website-us-east-1.amazonaws.com/wmt16/deduped/en-new.xz) - 58B tokens, cased - 2,000,000 words - 300 dimensions
+  - [Word Vectors (2.1GB)](http://nlpserver2.inf.ufrgs.br/alexandres/vectors/lexvec.ngramsubwords.300d.W.pos.vectors.gz)
+  - [Binary model (8.6GB)](http://nlpserver2.inf.ufrgs.br/alexandres/vectors/lexvec.commoncrawl.300d.W+C.pos.bin.gz) - use this to [compute vector for out-of-vocabulary (OOV) words](#oov)
+
+### LexVec
+
+* [Common Crawl](http://web-language-models.s3-website-us-east-1.amazonaws.com/wmt16/deduped/en-new.xz) - 58B tokens, lowercased - 2,000,000 words - 300 dimensions
   - [Word Vectors (2.2GB)](http://nlpserver2.inf.ufrgs.br/alexandres/vectors/lexvec.commoncrawl.300d.W.pos.vectors.gz)
   - [Word + Context Vectors (2.3GB)](http://nlpserver2.inf.ufrgs.br/alexandres/vectors/lexvec.commoncrawl.300d.W+C.pos.vectors.gz)
 
@@ -12,7 +19,39 @@ This is an implementation of the **LexVec word embedding model** (similar to wor
   - [Word Vectors (398MB)](http://nlpserver2.inf.ufrgs.br/alexandres/vectors/lexvec.enwiki%2bnewscrawl.300d.W.pos.vectors.gz)
   - [Word + Context Vectors (426MB)](http://nlpserver2.inf.ufrgs.br/alexandres/vectors/lexvec.enwiki%2bnewscrawl.300d.W%2bC.pos.vectors.gz)
 
-## Evaluation
+## Evaluation: Subword LexVec
+
+### External memory, huge corpus
+
+| Model  | GSem | GSyn | MSR | RW | SimLex | SCWS | WS-Sim | WS-Rel | MEN | MTurk | 
+| -----  | :----: | :----: | :----: | :----: | :----: | :----: | :----: | :----: | :----: | :----: |
+| LexVec | 72.6% | **73.8%** | **73.2%** | **.539** | **.477** | **.687** | .809 | .696 | **.814** | **.717** |
+| fastText | **75.0%** | 72.1% | 71.8% | .522 | .424 | .673 | **.810** | **.724** | .805 | **.717** |
+
+* Both models use vectors with 300 dimensions.
+
+* Both models use character n-grams of length 3-6 as subwords.
+
+* All tasks are evaluated using cased words (``"Toronto" != "toronto"``).
+
+* GSem, GSyn, and MSR analogies were solved using [3CosMul](http://www.aclweb.org/anthology/W14-1618).
+
+* Both models were trained using [this release of Common Crawl](http://web-language-models.s3-website-us-east-1.amazonaws.com/wmt16/deduped/en-new.xz) 
+which contains **58B tokens**, restricting the vocabulary to the 2 million most frequent cased words.
+
+* Subword LexVec was trained using the following command:
+
+  ```
+  $ OUTPUT=output scripts/em_lexvec.sh -corpus common_crawl_uncased.txt -negative 3 -dim 300 -subsample 1e-5 -minfreq 0 -window 2 -minn 3 -maxn 6
+  ```  
+  
+* fastText was trained using the following command:
+
+  ```
+  $ ./fasttext skipgram -input common_crawl_cased.txt -minCount 0 -t 1e-5 -dim 300 -lr 0.025 -minn 3 -maxn 6                  
+  ```
+
+## Evaluation: LexVec
 
 ### In-memory, large corpus
 
@@ -29,8 +68,7 @@ This is an implementation of the **LexVec word embedding model** (similar to wor
 * LexVec was trained using the default parameters, expanded here for comparison:
 
   ```
-  $ ./lexvec -corpus enwiki+newscrawl.txt -output lexvecvectors -dim 300 -window 2 \
-  -subsample 1e-5 -negative 5 -iterations 5 -minfreq 100 -matrix ppmi -model 0
+  $ OUTPUT=output scripts/im_lexvec.sh -corpus enwiki+newscrawl.txt -dim 300 -window 2 -subsample 1e-5 -negative 5 -iterations 5 -minfreq 100 -model 0 -minn 0
   ```
   
 * word2vec Skip-gram was trained using:
@@ -57,8 +95,7 @@ This is an implementation of the **LexVec word embedding model** (similar to wor
 which contains **58B tokens**, restricting the vocabulary to the 2 million most frequent words, using the following command:
 
   ```
-  $ OUTPUTDIR=output ./external_memory_lexvec.sh -corpus common_crawl.txt -negative 3 \
-  -model 0 -maxvocab 2000000 -minfreq 0 -window 2                                             
+  $ OUTPUT=output scripts/em_lexvec.sh -corpus common_crawl.txt -negative 3 -dim 300 -subsample 1e-5 -minfreq 0 -window 2 -minn 0                                     
   ```  
   
 * [The pre-trained word2vec vectors](https://drive.google.com/file/d/0B7XkCwpI5KDYNlNUTTlSS21pQmM/edit?usp=sharing) were trained using the unreleased Google News corpus containing **100B  tokens**, restricting the vocabulary to the 3 million most frequent words.
@@ -68,54 +105,77 @@ which contains **58B tokens**, restricting the vocabulary to the 2 million most 
 
 ## Installation
 
-### Binary
-
-The easiest way to get started with LexVec is to download the binary release. We only distribute amd64 binaries for Linux.
-
-**[Download binary](https://github.com/alexandres/lexvec/releases)**
-
-If you are using Windows, OS X, 32-bit Linux, or any other OS, follow the instructions below to build from source.
-
-### Building from source
-
-1. [Install the Go compiler](https://golang.org/doc/install)
+1. [Install the Go compiler](https://golang.org/doc/install) and clang.
 2. Make sure your `$GOPATH` is set
 3. Execute the following commands in your terminal:
 
    ```bash
    $ go get github.com/alexandres/lexvec
    $ cd $GOPATH/src/github.com/alexandres/lexvec
-   $ go build
+   $ make
    ```
 
 ## Usage
 
-### In-memory (default, faster, more accurate)
+### Training
 
-To get started, run `$ ./demo.sh` which trains a model using the small [text8](http://mattmahoney.net/dc/text8.zip) corpus (100MB from Wikipedia).
+#### In-memory
+
+To get started, run `$ scripts/demo.sh` which trains a model using the small [text8](http://mattmahoney.net/dc/text8.zip) corpus (100MB from Wikipedia).
 
 Basic usage of LexVec is:
 
-`$ ./lexvec -corpus somecorpus -output someoutputdirectory/vectors`
+`$ OUTPUT=dirwheretostorevectors scripts/im_lexvec.sh -corpus somecorpus`
 
 Run `$ ./lexvec -h` for a full list of options.
 
-Additionally, we provide a `word2vec` script which implements the exact same interface as the [word2vec](https://code.google.com/archive/p/word2vec/) package should you want to test LexVec using existing scripts. 
+#### External Memory
 
-### External Memory
+By default, LexVec stores the sparse matrix being factorized in-memory. This can be a problem if your training corpus is large and your system memory limited. We suggest you first try using the in-memory implementation. If you run into Out-Of-Memory issues, use the External Memory variant with the ``-memory`` option specifying how many GBs of memory to use for the sort buffer.
 
-By default, LexVec stores the sparse matrix being factorized in-memory. This can be a problem if your training corpus is large and your system memory limited. We suggest you first try using the in-memory implementation, which achieves higher scores in evaluations. If you run into Out-Of-Memory issues, try this External Memory approximation (not as accurate as in-memory; read [paper](https://arxiv.org/pdf/1606.01283v1) for details).
+`$ OUTPUT=dirwheretostorevectors scripts/em_lexvec.sh -corpus somecorpus -memory 4. ...exactsameoptionsasinmemory`
 
-`$ env OUTPUTDIR=output ./external_memory_lexvec.sh -corpus somecorpus -dim 300 ...exactsameoptionsasinmemory`
+### Subword LexVec
 
-Pre-processing can be accelerated by installing [nsort](http://www.ordinal.com/try.cgi/nsort-i386-3.4.54.rpm) and [pypy](http://pypy.org/) and editing `pairs_to_counts.sh`.
+#### Training
 
-## References
+Subword information is controlled by the options ``-minn``, ``-maxn``, and ``-subword``.
 
-Salle, Alexandre, Marco Idiart, and Aline Villavicencio. [Matrix Factorization using Window Sampling and Negative Sampling for Improved Word Representations.](http://anthology.aclweb.org/P16-2068) The 54th Annual Meeting of the Association for Computational Linguistics. 2016.
+* To disable the use of subword information, specify ``-minn 0``.
 
-Salle, A., Idiart, M., & Villavicencio, A. (2016). [Enhancing the LexVec Distributed Word Representation Model Using Positional Contexts and External Memory](https://arxiv.org/pdf/1606.01283v1). arXiv preprint arXiv:1606.01283.
+* To use character n-grams of length 3-6, specify ``-minn 3 -maxn 6`` (this is the default configuration).
+
+* To provide your own subword information (such as morphological segmentation), specify ``-minn 0 -subword subwords.txt``, where the subwords file contains one line for each vocabulary word (vocabulary must match that of ``-vocab``), each line containing a word followed by each of its subwords, separated by spaces.
+
+By default, the binary model used for computing OOV word vectors is saved to ``$OUTPUT/model.bin``. Set ``-outputsub ""`` to disable saving this model.
+
+#### <a name="oov"></a> Computing vectors for OOV words
+
+Use the binary model to compute vector for OOV words:
+
+* Using the Go executable by providing one word per line on ``stdin``:
+
+  ``$ echo "marvelicious" | ./lexvec embed -outputsub pathtomodel.bin``
+
+* Using the [Python lib](https://github.com/alexandres/lexvec/blob/master/python):
+
+  ```python
+  import lexvec
+  model = lexvec.Model('pathtomodel.bin')
+  vector = model.word_rep('marvelicious')
+  ```
+
+*Note: You can also use these commands to get vectors for in-vocabulary words as the binary model stores the vocabulary used for training.*
+
+## <a name="refs"></a> References
+
+Alexandre Salle and Aline Villavicencio. "Incorporating Subword Information into Matrix
+Factorization Word Embeddings." *to appear at* Second Workshop on Subword and Character LEvel Models in NLP (SCLeM) (2018).  
+
+Alexandre Salle, Marco Idiart, and Aline Villavicencio. ["Enhancing the LexVec Distributed Word Representation Model Using Positional Contexts and External Memory"](https://arxiv.org/pdf/1606.01283v1). arXiv preprint arXiv:1606.01283 (2016). 
+
+Alexandre Salle, Marco Idiart, and Aline Villavicencio. ["Matrix Factorization using Window Sampling and Negative Sampling for Improved Word Representations."](http://anthology.aclweb.org/P16-2068) The 54th Annual Meeting of the Association for Computational Linguistics (2016). 
 
 ## License
 
-Copyright (c) 2016 Salle, Alexandre <atsalle@inf.ufrgs.br>. All work in this package is distributed under the MIT License.
+Copyright (c) 2016-2018 Salle, Alexandre <alex@alexsalle.com>. All work in this package is distributed under the MIT License.

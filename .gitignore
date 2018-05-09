@@ -1,0 +1,8 @@
+.vscode
+tmp
+lexvec_1.0
+venv
+*.txt
+*.bin
+lexvec_v1.0.4*
+corpus
