@@ -186,7 +186,7 @@ func buildVocab() {
 				ctxVocabList = append(ctxVocabList, w)
 			}
 		}
-	} else if len(ctxVocabList) == 0 {
+	} else {
 		// If we are not using positional contexts, copy the sorted list of vocab words.
 		for _, w := range vocabList {
 			c := &word{w.w, w.idx, 0, 0, nil, 0}
