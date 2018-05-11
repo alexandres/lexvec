@@ -169,12 +169,11 @@ Use the binary model to compute vector for OOV words:
 
 ## <a name="refs"></a> References
 
-Alexandre Salle and Aline Villavicencio. "Incorporating Subword Information into Matrix
-Factorization Word Embeddings." *to appear at* Second Workshop on Subword and Character LEvel Models in NLP (SCLeM) (2018).  
+Alexandre Salle and Aline Villavicencio. "Incorporating Subword Information into Matrix Factorization Word Embeddings." *to appear at* Second Workshop on Subword and Character LEvel Models in NLP (2018). [(preprint)](https://arxiv.org/pdf/1805.03710)
 
-Alexandre Salle, Marco Idiart, and Aline Villavicencio. ["Enhancing the LexVec Distributed Word Representation Model Using Positional Contexts and External Memory"](https://arxiv.org/pdf/1606.01283v1). arXiv preprint arXiv:1606.01283 (2016). 
+Alexandre Salle, Marco Idiart, and Aline Villavicencio. "Enhancing the LexVec Distributed Word Representation Model Using Positional Contexts and External Memory." arXiv preprint arXiv:1606.01283 (2016). [(pdf)](https://arxiv.org/pdf/1606.01283v1)
 
-Alexandre Salle, Marco Idiart, and Aline Villavicencio. ["Matrix Factorization using Window Sampling and Negative Sampling for Improved Word Representations."](http://anthology.aclweb.org/P16-2068) The 54th Annual Meeting of the Association for Computational Linguistics (2016). 
+Alexandre Salle, Marco Idiart, and Aline Villavicencio. "Matrix Factorization using Window Sampling and Negative Sampling for Improved Word Representations." ACL (2016). [(pdf)](http://anthology.aclweb.org/P16-2068)
 
 ## License
 
