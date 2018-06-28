@@ -6,18 +6,18 @@ This is an implementation of the **LexVec word embedding model** (similar to wor
 
 ### Subword LexVec
 * [Common Crawl](http://web-language-models.s3-website-us-east-1.amazonaws.com/wmt16/deduped/en-new.xz) - 58B tokens, cased - 2,000,000 words - 300 dimensions
-  - [Word Vectors (2.1GB)](http://nlpserver2.inf.ufrgs.br/alexandres/vectors/lexvec.ngramsubwords.300d.W.pos.vectors.gz)
-  - [Binary model (8.6GB)](http://nlpserver2.inf.ufrgs.br/alexandres/vectors/lexvec.ngramsubwords.300d.W.pos.bin.gz) - use this to [compute vectors for out-of-vocabulary (OOV) words](#oov)
+  - [Word Vectors (2.1GB)](https://www.dropbox.com/s/mrxn933chn5u37z/lexvec.ngramsubwords.300d.W.pos.vectors.gz?dl=1)
+  - [Binary model (8.6GB)](https://www.dropbox.com/s/buix0deqlks4312/lexvec.ngramsubwords.300d.W.pos.bin.gz?dl=1) - use this to [compute vectors for out-of-vocabulary (OOV) words](#oov)
 
 ### LexVec
 
 * [Common Crawl](http://web-language-models.s3-website-us-east-1.amazonaws.com/wmt16/deduped/en-new.xz) - 58B tokens, lowercased - 2,000,000 words - 300 dimensions
-  - [Word Vectors (2.2GB)](http://nlpserver2.inf.ufrgs.br/alexandres/vectors/lexvec.commoncrawl.300d.W.pos.vectors.gz)
-  - [Word + Context Vectors (2.3GB)](http://nlpserver2.inf.ufrgs.br/alexandres/vectors/lexvec.commoncrawl.300d.W+C.pos.vectors.gz)
+  - [Word Vectors (2.2GB)](https://www.dropbox.com/s/flh1fjynqvdsj4p/lexvec.commoncrawl.300d.W.pos.vectors.gz?dl=1)
+  - [Word + Context Vectors (2.3GB)](https://www.dropbox.com/s/zkiajh6fj0hm0m7/lexvec.commoncrawl.300d.W%2BC.pos.vectors.gz?dl=1)
 
 * English Wikipedia 2015 + [NewsCrawl](http://www.statmt.org/wmt14/translation-task.html) - 7B tokens - 368,999 words - 300 dimensions
-  - [Word Vectors (398MB)](http://nlpserver2.inf.ufrgs.br/alexandres/vectors/lexvec.enwiki%2bnewscrawl.300d.W.pos.vectors.gz)
-  - [Word + Context Vectors (426MB)](http://nlpserver2.inf.ufrgs.br/alexandres/vectors/lexvec.enwiki%2bnewscrawl.300d.W%2bC.pos.vectors.gz)
+  - [Word Vectors (398MB)](https://www.dropbox.com/s/kguufyc2xcdi8yk/lexvec.enwiki%2Bnewscrawl.300d.W.pos.vectors.gz?dl=1)
+  - [Word + Context Vectors (426MB)](https://www.dropbox.com/s/u320t9bw6tzlwma/lexvec.enwiki%2Bnewscrawl.300d.W%2BC.pos.vectors.gz?dl=1)
 
 ## Evaluation: Subword LexVec
 
