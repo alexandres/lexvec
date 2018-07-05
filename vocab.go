@@ -268,8 +268,7 @@ func processSubwords() {
 		return
 	}
 
-	var buckets idxUint = 2000000 // same as fasttext
-	subwordMatrixRows += buckets
+	subwordMatrixRows += idxUint(buckets)
 
 	if subwordMinN > 0 {
 		logln(infoLogLevel, "building subword information")
@@ -297,7 +296,7 @@ func processSubwords() {
 				if sw == wrappedWord {
 					continue // word already has own vector
 				}
-				w.subwords = append(w.subwords, subwordIdx(sw, vocabSize, buckets))
+				w.subwords = append(w.subwords, subwordIdx(sw, vocabSize, idxUint(buckets)))
 			}
 		}
 		if foundSubwords != vocabSize {

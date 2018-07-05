@@ -87,6 +87,7 @@ var ctxbreakbytes []byte
 
 // subword
 var subwordMinN, subwordMaxN int
+var buckets int
 
 // cooc and sampling
 var unigramPower real
@@ -120,6 +121,7 @@ func main() {
 	flags.StringVar(&vocabPath, "vocab", "", "path where to output/load vocab")
 	flags.IntVar(&subwordMinN, "minn", 3, "mininum ngram length when generating subwords")
 	flags.IntVar(&subwordMaxN, "maxn", 6, "maximum ngram length when generating subwords")
+	flags.IntVar(&buckets, "buckets", 2000000, "subword buckets")
 	flags.StringVar(&subwordPath, "subword", "", "path to subword information")
 	flags.Float64Var(&initialAlpha, "alpha", 0.025, "learning rate")
 	flags.Float64Var(&subsample, "subsample", 1e-5, "subsampling threshold")
