@@ -171,8 +171,7 @@ func (model LexVec)CalculateOovVectors(input []string) ([]Result, error) {
 		}
 
 		var vLen int
-		if idx, ok := model.ivWordToIdx[w]; ok {
-			fmt.Println(w, idx)
+		if _, ok := model.ivWordToIdx[w]; ok {
 			copy(res.Vec, model.ivWordToVec[w])
 			vLen++
 		}
