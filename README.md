@@ -42,7 +42,7 @@ which contains **58B tokens**, restricting the vocabulary to the 2 million most 
 * Subword LexVec was trained using the following command:
 
   ```
-  $ OUTPUT=output scripts/em_lexvec.sh -corpus common_crawl_uncased.txt -negative 3 -dim 300 -subsample 1e-5 -minfreq 0 -window 2 -minn 3 -maxn 6
+  $ OUTPUT=output scripts/em_lexvec.sh -corpus common_crawl_cased.txt -negative 3 -dim 300 -subsample 1e-5 -minfreq 0 -window 2 -minn 3 -maxn 6
   ```  
   
 * fastText was trained using the following command:
