@@ -29,6 +29,8 @@ import (
 	"os"
 	"runtime/pprof"
 	"strings"
+	"github.com/bountylabs/lexvec/lexvecutil"
+	"bufio"
 )
 
 type (
@@ -207,11 +209,30 @@ func main() {
 		train(newTrainIteratorEM())
 		saveVectors()
 	case oovCommand:
-		calculateOovVectors()
+
+		m, err := lexvecutil.LoadModel(subvecsOutputPath)
+		if err != nil {
+			panic(err)
+		}
+		out, err := m.CalculateOovVectors(InputToStrings())
+		if err != nil {
+			panic(err)
+		}
+		fmt.Printf("%+v",out)
+		m.Close()
 	default:
 		flags.Usage()
 		os.Exit(1)
 	}
 
 	logln(infoLogLevel, "finished!")
+}
+
+func InputToStrings() (out []string) {
+	s := bufio.NewScanner(os.Stdin)
+	s.Split(bufio.ScanLines)
+	for s.Scan() {
+		out = append(out, s.Text())
+	}
+	return out
 }
