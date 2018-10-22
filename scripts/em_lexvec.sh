@@ -11,7 +11,6 @@ ARGS="-vocab $OUTPUT/vocab.txt \
     -outputsub $OUTPUT/model.bin"
 mkdir -p $OUTPUT
 CMD=$1
-echo dude
 if [ $# -gt 0 ]
 then
     shift
