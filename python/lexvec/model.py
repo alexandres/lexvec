@@ -102,7 +102,9 @@ class Model:
         for sw in subwords:
             v += self._get_vector(self._subword_idx(sw))
             l += 1
-        return v / l
+        if l > 0:
+            v /= l
+        return v
 
 if __name__ == '__main__':
     path = sys.argv[1]
