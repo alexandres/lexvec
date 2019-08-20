@@ -31,6 +31,26 @@ import (
 	"time"
 )
 
+type processStrategyFunc func(y real) bool
+
+var processStrategyMap = map[string]processStrategyFunc{
+	"all": processAllStrategyFunc,
+	"gt":  processGreaterThanThresholdStrategyFunc,
+	"leq": processLessThanOrEqualToThresholdStrategyFunc,
+}
+
+func processAllStrategyFunc(y real) bool {
+	return true
+}
+
+func processGreaterThanThresholdStrategyFunc(y real) bool {
+	return y > processThreshold
+}
+
+func processLessThanOrEqualToThresholdStrategyFunc(y real) bool {
+	return y <= processThreshold
+}
+
 const batchSize = 10000
 
 var totalLossPerThread []real
@@ -155,13 +175,15 @@ func trainThread(wg *sync.WaitGroup, threadID, iteration int, it trainIterator) 
 
 	it.iterate(threadID, func(w, c *word, y real, datumProcessedByThread uint64) {
 		datumProcessedPerThread[threadID] = datumProcessedByThread
+		if !processStrategy(y) {
+			return
+		}
 		wIdxs[n] = w.idx
 		cIdxs[n] = c.idx
 		ys[n] = y
 		n++
 		if n == batchSize {
 			step()
-
 		}
 	})
 	step()

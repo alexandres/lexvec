@@ -25,40 +25,42 @@ package main
 import "math"
 
 var associationMap = map[string]associationMeasureFunc{
-	"ppmi":    ppmiAssociationMeasureFunc,
-	"pmi":     pmiAssociationMeasureFunc,
-	"logcooc": logCoocAssociationMeasureFunc,
-	"cooc":    coocAssociationMeasureFunc,
+	"cpmi":    cPmiAssociationMeasureFunc,
+	"npmi":    nPmiAssociationMeasureFunc,
+	"nnegpmi": nNegPmiAssociationMeasureFunc,
 }
 
 type associationMeasureFunc func(w, c *word, cooc countUint) real
 
-func ppmiAssociationMeasureFunc(w, c *word, cooc countUint) real {
+func cPmiAssociationMeasureFunc(w, c *word, cooc countUint) real {
 	if cooc == 0 {
-		return 0
+		return clipPmi
 	}
-	ppmi := math.Log(real(cooc)) - w.logTotalCooc - c.logTotalCooc + logCdsTotal
-	if ppmi < 0 {
-		return 0
+	pmi := pmiAssociationMeasureFunc(w, c, cooc)
+	if pmi < clipPmi {
+		return clipPmi
 	}
-	return ppmi
-}
-
-func pmiAssociationMeasureFunc(w, c *word, cooc countUint) real {
-	if cooc == 0 {
-		cooc = 1 
-	}
-	pmi := math.Log(real(cooc)) - w.logTotalCooc - c.logTotalCooc + logCdsTotal
 	return pmi
 }
 
-func logCoocAssociationMeasureFunc(w, c *word, cooc countUint) real {
-	if cooc == 0 {
-		cooc = 1 
-	}
-	return math.Log(real(cooc))
+func pmiAssociationMeasureFunc(w, c *word, cooc countUint) real {
+	return math.Log(real(cooc)) - w.logTotalCooc - c.logTotalCooc + logCdsTotal
 }
 
-func coocAssociationMeasureFunc(w, c *word, cooc countUint) real {
-	return real(cooc)
+func nPmiAssociationMeasureFunc(w, c *word, cooc countUint) real {
+	if cooc == 0 {
+		return -1
+	}
+	return pmiAssociationMeasureFunc(w, c, cooc) / -(math.Log(real(cooc)) - logCdsTotal)
+}
+
+func nNegPmiAssociationMeasureFunc(w, c *word, cooc countUint) real {
+	if cooc == 0 {
+		return -1
+	}
+	pmi := pmiAssociationMeasureFunc(w, c, cooc)
+	if pmi >= 0 {
+		return pmi
+	}
+	return nPmiAssociationMeasureFunc(w, c, cooc)
 }

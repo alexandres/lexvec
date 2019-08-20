@@ -91,7 +91,6 @@ var buckets int
 
 // cooc and sampling
 var unigramPower real
-var associationMeasureString string
 var contextDistributionSmoothing, cdsTotal, logCdsTotal, subsample real
 var window int
 var weightedWindow bool
@@ -109,6 +108,9 @@ var iterations int
 var dim idxUint
 var subwordMatrixRows idxUint
 var associationMeasure associationMeasureFunc
+var clipPmi real
+var processStrategy processStrategyFunc
+var processThreshold real
 
 func init() {
 	ctxbreakbytes = []byte(ctxBreakToken)
@@ -140,8 +142,15 @@ func main() {
 	for matrix := range associationMap {
 		matrixStrings = append(matrixStrings, matrix)
 	}
-	flags.StringVar(&associationMeasureString, "matrix", "ppmi", "which matrix to factor ("+strings.Join(matrixStrings, ",")+") default = ppmi")
-	flags.IntVar(&verbose, "verbose", debugLogLevel, "verboseness (0 = errors only, 1 = info, 2 = debug) default = 1")
+	var associationMeasureString = flags.String("matrix", "cpmi", "which matrix to factor ("+strings.Join(matrixStrings, ",")+")")
+	flags.Float64Var(&clipPmi, "clip", 0, "clip value for cPMI (default of 0 gives PPMI) default = 0")
+	var processFuncStrings []string
+	for processFunc := range processStrategyMap {
+		processFuncStrings = append(processFuncStrings, processFunc)
+	}
+	var processFuncString = flags.String("process", "all", "which matrix cells to factor ("+strings.Join(processFuncStrings, ",")+")")
+	flags.Float64Var(&processThreshold, "processthreshold", 0, "threshold for -process flag (ex. 1: -process gt and -processthreshold 0 means only process cells > 0, ex. 2: -process leq and -processthreshold 0 means only process cells <= 0)")
+	flags.IntVar(&verbose, "verbose", debugLogLevel, "verboseness (0 = errors only, 1 = info, 2 = debug)")
 	flags.StringVar(&coocTotalsPath, "cooctotalspath", "", "path to cooc totals for each word when using external memory")
 	flags.StringVar(&coocPath, "coocpath", "", "path to coocs when using external memory")
 	flags.Float64Var(&lineBufMem, "memory", 4, "GB of memory to use in line buffer")
@@ -178,9 +187,14 @@ func main() {
 	maxVocab = idxUint(*maxVocabRaw)
 
 	var ok bool
-	associationMeasure, ok = associationMap[associationMeasureString]
+	associationMeasure, ok = associationMap[*associationMeasureString]
 	if !ok {
-		logln(errorLogLevel, "invalid association measure")
+		logln(errorLogLevel, "invalid option for -matrix")
+	}
+
+	processStrategy, ok = processStrategyMap[*processFuncString]
+	if !ok {
+		logln(errorLogLevel, "invalid option for -process")
 	}
 
 	switch command {
