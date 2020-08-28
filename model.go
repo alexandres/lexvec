@@ -104,7 +104,8 @@ func mergeContextVectors() {
 			var v float64
 			// If we're not using positional contexts it's simple addition.
 			if !positionalContexts {
-				v = mCtx[w.idx*dim+j]
+				c, _ := ctxVocab[w.w]
+				v = mCtx[c.idx*dim+j]
 			} else {
 				// We need to sum all of the positional context vectors (one for each
 				// position).
@@ -116,7 +117,6 @@ func mergeContextVectors() {
 					c, _ := ctxVocab[posC]
 					v += mCtx[c.idx*dim+j]
 				}
-				v /= float64(2 * window)
 			}
 			mVec[w.idx*dim+j] += v
 		}

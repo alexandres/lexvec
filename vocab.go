@@ -173,9 +173,6 @@ func buildVocab() {
 	if positionalContexts {
 		logln(infoLogLevel, "creating positional vocab words")
 		for _, w := range vocabList {
-			if w == ctxbreakw {
-				continue
-			}
 			for j := -window; j <= window; j++ {
 				if j == 0 {
 					continue
