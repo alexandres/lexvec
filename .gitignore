@@ -7,3 +7,5 @@ venv
 lexvec_v1.0.4*
 corpus
 lexvec
+.idea
+output
