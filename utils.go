@@ -62,7 +62,7 @@ func doLog(level int, msg string, lineBreak bool, args ...interface{}) {
 	}
 	os.Stderr.Sync()
 	if level == errorLogLevel {
-		os.Exit(1)
+		//os.Exit(1)
 	}
 }
 
