@@ -1,7 +1,7 @@
 package main
 
 import (
-	"github.com/alexandres/lexvec"
+	"github.com/hjdo/lexvec"
 )
 
 func main() {

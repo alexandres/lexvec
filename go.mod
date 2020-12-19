@@ -1,3 +1,3 @@
-module github.com/alexandres/lexvec
+module github.com/hjdo/lexvec
 
 go 1.14
