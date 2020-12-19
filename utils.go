@@ -31,7 +31,7 @@ import (
 // Helper for aborting on error.
 func check(e error) {
 	if e != nil {
-		panic(e)
+		logln(errorLogLevel, "panic: %v", e)
 	}
 }
 
