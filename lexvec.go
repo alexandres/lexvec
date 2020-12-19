@@ -232,12 +232,11 @@ func Build() {
 	logln(infoLogLevel, "finished!")
 }
 
-func GetOovVectors(words []string, subvecsOutput *os.File) (OovVectors, error) {
+func GetOovVectors(words []string, subvecsOutput *os.File) ([]float64, error) {
 	var (
-		err error
-		ov  = make(OovVectors, float64Bytes)
-		b   = make([]byte, float64Bytes)
-
+		err               error
+		b                 = make([]byte, float64Bytes)
+		vector            = make([]float64, 0)
 		magicNumber       = binaryModelReadUint32(subvecsOutput, b)
 		version           = binaryModelReadUint32(subvecsOutput, b)
 		vocabSize         = binaryModelReadUint32(subvecsOutput, b)
@@ -263,7 +262,7 @@ func GetOovVectors(words []string, subvecsOutput *os.File) (OovVectors, error) {
 
 		b := make([]byte, wLen)
 		if _, err = subvecsOutput.Read(b); err != nil {
-			return ov, nil
+			return vector, nil
 		}
 
 		w := string(b)
@@ -271,7 +270,7 @@ func GetOovVectors(words []string, subvecsOutput *os.File) (OovVectors, error) {
 		ivWords = append(ivWords, w)
 	}
 	if matrixBaseOffset, err = subvecsOutput.Seek(0, 1); err != nil {
-		return ov, nil
+		return vector, nil
 	}
 
 	for _, oov := range words {
@@ -304,9 +303,13 @@ func GetOovVectors(words []string, subvecsOutput *os.File) (OovVectors, error) {
 				vec[j] /= float64(vLen)
 			}
 		}
-		ov[oov] = vec
+		for _, f := range vec {
+			if f != 0 {
+				vector = append(vector, f)
+			}
+		}
 	}
-	return ov, nil
+	return vector, nil
 }
 
 func StartTrain(outputFolder, corpusP string,
