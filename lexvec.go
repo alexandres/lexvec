@@ -232,21 +232,26 @@ func Build() {
 	logln(infoLogLevel, "finished!")
 }
 
-func GetOovVectors(words []string, subvecsOutput *os.File) ([]float64, error) {
+func GetOovVectors(words []string, subvecsOutputPath string) ([]float64, error) {
 	var (
-		err               error
-		b                 = make([]byte, float64Bytes)
-		vector            = make([]float64, 0)
-		magicNumber       = binaryModelReadUint32(subvecsOutput, b)
-		version           = binaryModelReadUint32(subvecsOutput, b)
-		vocabSize         = binaryModelReadUint32(subvecsOutput, b)
-		subwordMatrixRows = binaryModelReadUint32(subvecsOutput, b)
-		dim               = binaryModelReadUint32(subvecsOutput, b)
-		subwordMinN       = binaryModelReadUint32(subvecsOutput, b)
-		subwordMaxN       = binaryModelReadUint32(subvecsOutput, b)
-
+		err              error
+		b                = make([]byte, float64Bytes)
+		vector           = make([]float64, 0)
 		matrixBaseOffset int64
 	)
+	subvecsOutput, err := os.Open(subvecsOutputPath)
+	if err != nil {
+		logln(errorLogLevel, "open file failed")
+	}
+	defer subvecsOutput.Close()
+
+	magicNumber := binaryModelReadUint32(subvecsOutput, b)
+	version := binaryModelReadUint32(subvecsOutput, b)
+	vocabSize := binaryModelReadUint32(subvecsOutput, b)
+	subwordMatrixRows := binaryModelReadUint32(subvecsOutput, b)
+	dim := binaryModelReadUint32(subvecsOutput, b)
+	subwordMinN := binaryModelReadUint32(subvecsOutput, b)
+	subwordMaxN := binaryModelReadUint32(subvecsOutput, b)
 
 	if magicNumber != binaryModelMagicNumber {
 		logln(errorLogLevel, "magic number doesnt match")
