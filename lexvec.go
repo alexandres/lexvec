@@ -309,9 +309,7 @@ func GetOovVectors(words []string, subvecsOutputPath string) ([]float64, error) 
 			}
 		}
 		for _, f := range vec {
-			if f != 0 {
-				vector = append(vector, f)
-			}
+			vector = append(vector, f)
 		}
 	}
 	return vector, nil
