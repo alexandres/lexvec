@@ -1,17 +1,14 @@
 package lexvec
 
 import (
-	"os"
 	"reflect"
 	"testing"
 )
 
 func TestGetOovVectors(t *testing.T) {
-	f, _ := os.Open("output/model.bin")
-
 	type args struct {
-		words         []string
-		subvecsOutput *os.File
+		words         string
+		subvecsOutput string
 	}
 	tests := []struct {
 		name    string
@@ -22,8 +19,8 @@ func TestGetOovVectors(t *testing.T) {
 		{
 			name: "test",
 			args: args{
-				words:         []string{"test", "model"},
-				subvecsOutput: f,
+				words:         "test the model",
+				subvecsOutput: "output/model.bin",
 			},
 		},
 	}
@@ -63,7 +60,7 @@ func TestStartTrain(t *testing.T) {
 			name: "test",
 			args: args{
 				outputFolder: "output",
-				corpus:       "morphological.txt",
+				corpus:       "C:/Users/starsc/Downloads/corpus.txt",
 				dim:          300,
 				subsample:    1e-5,
 				window:       2,
