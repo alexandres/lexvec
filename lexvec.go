@@ -232,7 +232,7 @@ func Build() {
 	logln(infoLogLevel, "finished!")
 }
 
-func GetOovVectors(words []string, subvecsOutputPath string) ([]float64, error) {
+func GetOovVectors(words string, subvecsOutputPath string) ([]float64, error) {
 	var (
 		err              error
 		b                = make([]byte, float64Bytes)
@@ -278,39 +278,37 @@ func GetOovVectors(words []string, subvecsOutputPath string) ([]float64, error) 
 		return vector, nil
 	}
 
-	for _, oov := range words {
-		vec := make([]float64, dim)
-		if len(oov) == 0 {
-			break
-		}
-		parts := strings.Split(oov, " ")
-		w := parts[0]
-		var subwords []string
-		if subwordMinN > 0 && len(parts) == 1 {
-			subwords = computeSubwords(w, int(subwordMinN), int(subwordMaxN))
-		} else {
-			subwords = parts[1:]
-		}
+	vec := make([]float64, dim)
+	if len(words) == 0 {
+		return vector, err
+	}
+	parts := strings.Split(words, " ")
+	w := parts[0]
+	var subwords []string
+	if subwordMinN > 0 && len(parts) == 1 {
+		subwords = computeSubwords(w, int(subwordMinN), int(subwordMaxN))
+	} else {
+		subwords = parts[1:]
+	}
+	for j := 0; j < int(dim); j++ {
+		vec[j] = 0
+	}
+	var vLen int
+	if idx, ok := ivWordToIdx[w]; ok {
+		sumVecFromBin(subvecsOutput, matrixBaseOffset, vec, idxUint(idx))
+		vLen++
+	}
+	for _, sw := range subwords {
+		sumVecFromBin(subvecsOutput, matrixBaseOffset, vec, subwordIdx(sw, vocabSize, subwordMatrixRows-vocabSize))
+		vLen++
+	}
+	if vLen > 0 {
 		for j := 0; j < int(dim); j++ {
-			vec[j] = 0
+			vec[j] /= float64(vLen)
 		}
-		var vLen int
-		if idx, ok := ivWordToIdx[w]; ok {
-			sumVecFromBin(subvecsOutput, matrixBaseOffset, vec, idxUint(idx))
-			vLen++
-		}
-		for _, sw := range subwords {
-			sumVecFromBin(subvecsOutput, matrixBaseOffset, vec, subwordIdx(sw, vocabSize, subwordMatrixRows-vocabSize))
-			vLen++
-		}
-		if vLen > 0 {
-			for j := 0; j < int(dim); j++ {
-				vec[j] /= float64(vLen)
-			}
-		}
-		for _, f := range vec {
-			vector = append(vector, f)
-		}
+	}
+	for _, f := range vec {
+		vector = append(vector, f)
 	}
 	return vector, nil
 }
