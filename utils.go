@@ -20,7 +20,7 @@
  * CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-package main
+package lexvec
 
 import (
 	"errors"
@@ -31,7 +31,7 @@ import (
 // Helper for aborting on error.
 func check(e error) {
 	if e != nil {
-		panic(e)
+		logln(errorLogLevel, "panic: %v", e)
 	}
 }
 
@@ -62,7 +62,7 @@ func doLog(level int, msg string, lineBreak bool, args ...interface{}) {
 	}
 	os.Stderr.Sync()
 	if level == errorLogLevel {
-		os.Exit(1)
+		//os.Exit(1)
 	}
 }
 
